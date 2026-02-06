@@ -57,31 +57,121 @@ const MOCK_MENUS: MenuIdea[] = [
   }
 ];
 
+const MOCK_COMMENTS: Comment[] = [
+  {
+    id: 'comment-1',
+    userId: 'user-1',
+    entityId: 'post-1',
+    text: 'That burger looks incredible! Does the brioche bun hold up well?',
+    createdAt: new Date().toISOString()
+  }
+];
+
 export const mockDb = {
-  getUser: () => {
-    const data = localStorage.getItem('fh_user');
-    return data ? JSON.parse(data) : INITIAL_USER;
+  getCurrentUser: () => {
+    const data = localStorage.getItem('kalasa_session');
+    return data ? JSON.parse(data) : null;
   },
-  setUser: (user: User) => localStorage.setItem('fh_user', JSON.stringify(user)),
+  
+  getUserById: (id: string) => {
+    const users = mockDb.getAllUsers();
+    return users.find(u => u.id === id);
+  },
+
+  login: (email: string) => {
+    const users = mockDb.getAllUsers();
+    const user = users.find(u => u.email === email);
+    if (user) {
+      localStorage.setItem('kalasa_session', JSON.stringify(user));
+      return user;
+    }
+    return null;
+  },
+
+  register: (name: string, email: string) => {
+    const users = mockDb.getAllUsers();
+    if (users.find(u => u.email === email)) return null;
+
+    const newUser: User = {
+      id: `user-${Date.now()}`,
+      name,
+      email,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+      bio: 'New member of KALASA family.',
+      following: [],
+      followers: []
+    };
+
+    localStorage.setItem('kalasa_users', JSON.stringify([...users, newUser]));
+    localStorage.setItem('kalasa_session', JSON.stringify(newUser));
+    return newUser;
+  },
+
+  updateUser: (userId: string, updates: Partial<User>) => {
+    const users = mockDb.getAllUsers();
+    const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
+    localStorage.setItem('kalasa_users', JSON.stringify(updatedUsers));
+    
+    const current = mockDb.getCurrentUser();
+    if (current?.id === userId) {
+      localStorage.setItem('kalasa_session', JSON.stringify({ ...current, ...updates }));
+    }
+    return { ...current, ...updates };
+  },
+
+  logout: () => {
+    localStorage.removeItem('kalasa_session');
+  },
+
+  getAllUsers: (): User[] => {
+    const data = localStorage.getItem('kalasa_users');
+    return data ? JSON.parse(data) : [INITIAL_USER];
+  },
   
   getPosts: (): FoodPost[] => {
-    const data = localStorage.getItem('fh_posts');
+    const data = localStorage.getItem('kalasa_posts');
     return data ? JSON.parse(data) : MOCK_POSTS;
   },
+
   addPost: (post: FoodPost) => {
     const posts = mockDb.getPosts();
     const newPosts = [post, ...posts];
-    localStorage.setItem('fh_posts', JSON.stringify(newPosts));
+    localStorage.setItem('kalasa_posts', JSON.stringify(newPosts));
+  },
+
+  updatePost: (post: FoodPost) => {
+    const posts = mockDb.getPosts();
+    const updated = posts.map(p => p.id === post.id ? post : p);
+    localStorage.setItem('kalasa_posts', JSON.stringify(updated));
+  },
+
+  deletePost: (postId: string) => {
+    const posts = mockDb.getPosts();
+    const updated = posts.filter(p => p.id !== postId);
+    localStorage.setItem('kalasa_posts', JSON.stringify(updated));
   },
   
   getMenus: (): MenuIdea[] => {
-    const data = localStorage.getItem('fh_menus');
+    const data = localStorage.getItem('kalasa_menus');
     return data ? JSON.parse(data) : MOCK_MENUS;
   },
+
   addMenu: (menu: MenuIdea) => {
     const menus = mockDb.getMenus();
     const newMenus = [menu, ...menus];
-    localStorage.setItem('fh_menus', JSON.stringify(newMenus));
+    localStorage.setItem('kalasa_menus', JSON.stringify(newMenus));
+  },
+
+  getComments: (entityId: string): Comment[] => {
+    const data = localStorage.getItem('kalasa_comments');
+    const comments: Comment[] = data ? JSON.parse(data) : MOCK_COMMENTS;
+    return comments.filter(c => c.entityId === entityId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  addComment: (comment: Comment) => {
+    const data = localStorage.getItem('kalasa_comments');
+    const comments: Comment[] = data ? JSON.parse(data) : MOCK_COMMENTS;
+    localStorage.setItem('kalasa_comments', JSON.stringify([...comments, comment]));
   },
 
   toggleLike: (id: string, type: 'post' | 'menu', userId: string) => {
@@ -94,7 +184,7 @@ export const mockDb = {
         }
         return p;
       });
-      localStorage.setItem('fh_posts', JSON.stringify(updated));
+      localStorage.setItem('kalasa_posts', JSON.stringify(updated));
     } else {
       const menus = mockDb.getMenus();
       const updated = menus.map(m => {
@@ -104,7 +194,7 @@ export const mockDb = {
         }
         return m;
       });
-      localStorage.setItem('fh_menus', JSON.stringify(updated));
+      localStorage.setItem('kalasa_menus', JSON.stringify(updated));
     }
   }
 };
