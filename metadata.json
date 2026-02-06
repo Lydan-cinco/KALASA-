@@ -2,6 +2,7 @@
   "name": "KALASA",
   "description": "A social platform for foodies to share posts and curated menu ideas, powered by Gemini AI for recipe and menu generation.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ]
 }

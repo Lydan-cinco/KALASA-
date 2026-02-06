@@ -14,7 +14,8 @@ export interface FoodPost {
   userId: string;
   title: string;
   description: string;
-  imageUrl: string;
+  imageUrl: string; // Used for both images and videos (data URL or URI)
+  mediaType: 'image' | 'video';
   ingredients: string[];
   tags: string[];
   likes: string[];
